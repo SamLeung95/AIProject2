@@ -21,15 +21,19 @@ def make_surface(fig):
     #fig.colorbar(surf, shrink=0.5, aspect=5)
 
 
-# In[22]:
+# In[48]:
 
 def get_function(x = 1, y = 1):
-    r = math.sqrt(math.pow(x, 2) + math.pow(y, 2))
-    function = ((math.sin(math.pow(x, 2) + 3*math.pow(y, 2))) / (0.1 + math.pow(r, 2))) + (math.pow(x, 2) + 5*math.pow(y, 2))*(math.exp(1-(math.pow(r, 2))) / 2)
+    
+    if(x=="None" or y=="None"):
+        function="None"
+    else:
+        r = math.sqrt(math.pow(x, 2) + math.pow(y, 2))
+        function = ((math.sin(math.pow(x, 2) + 3*math.pow(y, 2))) / (0.1 + math.pow(r, 2))) + (math.pow(x, 2) + 5*math.pow(y, 2))*(math.exp(1-(math.pow(r, 2))) / 2)
     return function
 
 
-# In[23]:
+# In[49]:
 
 def hill_climb(function_to_optimize, step_size, xmin, xmax, ymin, ymax):
 
@@ -81,7 +85,7 @@ def hill_climb(function_to_optimize, step_size, xmin, xmax, ymin, ymax):
 
 
 
-# In[24]:
+# In[50]:
 
 def hill_climb_random_restart(function_to_optimize, step_size, num_restarts, xmin, xmax, ymin, ymax):
     
@@ -89,73 +93,75 @@ def hill_climb_random_restart(function_to_optimize, step_size, num_restarts, xmi
     
     results=[]
     
+    if(num_restarts>0):
+        for x in range(0,num_restarts):
+            curx=random.uniform(xmin, xmax)
+            cury=random.uniform(ymin, ymax)
+            curz=function_to_optimize(curx, cury)
 
-    for x in range(0,num_restarts):
-        curx=random.uniform(xmin, xmax)
-        cury=random.uniform(ymin, ymax)
-        curz=function_to_optimize(curx, cury)
+            newx=curx
+            newy=cury
+            newz=curz
+            foundmax=False
 
-        newx=curx
-        newy=cury
-        newz=curz
-        foundmax=False
+            ax = fig.gca(projection='3d')
 
-        ax = fig.gca(projection='3d')
+            while foundmax != True:
 
-        while foundmax != True:
-            
-            #Gets random direction for x
-            for x in range(-1,3):
-                if(x==2):
-                    if(newz==curz):
-                        foundmax=True
-                    curx=newx
-                    cury=newy
-                    curz=newz
+                #Gets random direction for x
+                for x in range(-1,3):
+                    if(x==2):
+                        if(newz==curz):
+                            foundmax=True
+                        curx=newx
+                        cury=newy
+                        curz=newz
 
-                    break
-                tempx=curx
-                tempx+=x*step_size
+                        break
+                    tempx=curx
+                    tempx+=x*step_size
 
-                #Gets random direction for y
-                for y in range(-1, 2):
-                    tempy=cury
-                    tempy+=y*step_size
+                    #Gets random direction for y
+                    for y in range(-1, 2):
+                        tempy=cury
+                        tempy+=y*step_size
 
-                    #Checks if in bounds and is going down
-                    if(tempx>xmin and tempx<xmax and tempy>ymin and tempy<ymax and function_to_optimize(tempx,tempy)<newz):
-                        newx=tempx
-                        newy=tempy
-                        newz=function_to_optimize(newx,newy)
+                        #Checks if in bounds and is going down
+                        if(tempx>xmin and tempx<xmax and tempy>ymin and tempy<ymax and function_to_optimize(tempx,tempy)<newz):
+                            newx=tempx
+                            newy=tempy
+                            newz=function_to_optimize(newx,newy)
 
-                        #if (fig!=None):
-                        ax.scatter(newx, newy, newz, c='r')
+                            #if (fig!=None):
+                            ax.scatter(newx, newy, newz, c='r')
+
+                results.append({'x':curx, 'y':cury})
         
-            results.append({'x':curx, 'y':cury})
         
-        
-    best_coord={'x':results[0]['x'], 'y':results[0]['y']}
-    cur_result=function_to_optimize(best_coord['x'],best_coord['y'])
+        best_coord={'x':results[0]['x'], 'y':results[0]['y']}
+        cur_result=function_to_optimize(best_coord['x'],best_coord['y'])
+
+
+        #Goes through all hill climbing results
+        for data in results:
+            temp_result=function_to_optimize(data['x'],data['y'])
+
+            #Compares and looks for best result
+            if(temp_result<cur_result):
+                best_coord['x']=data['x']
+                best_coord['y']=data['y']
+                cur_result=function_to_optimize(best_coord['x'],best_coord['y'])
+
+
+        best_coord['fig']=fig        
     
-    
-    #Goes through all hill climbing results
-    for data in results:
-        temp_result=function_to_optimize(data['x'],data['y'])
+    else:
+        best_coord={'x':"None", 'y':"None", 'fig':fig}
         
-        #Compares and looks for best result
-        if(temp_result<cur_result):
-            best_coord['x']=data['x']
-            best_coord['y']=data['y']
-            cur_result=function_to_optimize(best_coord['x'],best_coord['y'])
-            
-            
-    best_coord['fig']=fig        
-
-    
     return best_coord
 
 
-# In[25]:
+# In[51]:
 
 def simulated_annealing(function_to_optimize, step_size, max_temp, xmin, xmax, ymin, ymax):
     
@@ -211,12 +217,12 @@ def simulated_annealing(function_to_optimize, step_size, max_temp, xmin, xmax, y
     return {'x':bestx, 'y':besty, 'fig':fig}
 
 
-# In[26]:
+# In[56]:
 
 def main():
         
     hillclimb=hill_climb(get_function ,.1,-2.5,2.5,-2.5,2.5)
-    hillclimbwrandom=hill_climb_random_restart(get_function ,.1,100,-2.5,2.5,-2.5,2.5)
+    hillclimbwrandom=hill_climb_random_restart(get_function ,.1,1,-2.5,2.5,-2.5,2.5)
     annealng=simulated_annealing(get_function, 0.001, 3, -2.5, 2.5, -2.5, 2.5)
     
     make_surface(hillclimb['fig'])
@@ -226,18 +232,18 @@ def main():
     plt.show()
 
     
-    print("HillClimb:",hillclimb)
+    print("HillClimb coord: (X:",hillclimb['x'],"Y:",hillclimb['y'],")")
     print("HillClimb z value:",get_function(hillclimb['x'],hillclimb['y']),"\n")
     
-    print("HillClimb w/ random restarts coor:",hillclimbwrandom)
+    print("HillClimb w/ random restarts coord: (X:",hillclimbwrandom['x'],"Y:",hillclimbwrandom['y'],")")
     print("HillClimb w/ random restarts z value:",get_function(hillclimbwrandom['x'],hillclimbwrandom['y']),"\n")
     
-    print("Annealing coord:",annealng)
+    print("Annealing coord: (X:",annealng['x'],"Y:",annealng['y'],")")
     print("Annealing z value:",get_function(annealng['x'],annealng['y']))
     
 
 
-# In[27]:
+# In[57]:
 
 import math
 import random
